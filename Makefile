@@ -10,7 +10,7 @@ OUTPUT_ROOTFS ?= $(OUTPUT)/rootfs
 
 SRC_BUSYBOX ?= $(CURDIR)/busybox/busybox-1.30.0
 SRC_ETHTOOL ?= $(CURDIR)/ethtool/ethtool-5.2.tar.gz
-SRC_KERNEL ?= $(CURDIR)/kernel/linux-4.19
+SRC_KERNEL ?= $(CURDIR)/kernel/linux-5.0
 SRC_ROOTFS ?= $(CURDIR)/rootfs
 
 ifeq ($(JOBS),)
