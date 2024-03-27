@@ -78,7 +78,7 @@ rootfs:
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s lib lib64;popd
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s sbin/init init;popd
 
-	$(Q)cp -rf $(shell dirname $(shell realpath $(shell which $(CROSS_COMPILE)gcc)))/../$(HOST)/libc/lib $(OUTPUT_ROOTFS)
+	$(Q)cp -rf $(CURDIR)/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib $(OUTPUT_ROOTFS)
 	$(Q)find $(OUTPUT_ROOTFS) -name *.a | xargs rm -rf
 	$(Q)-$(CROSS_COMPILE)strip -s $(OUTPUT_ROOTFS)/lib/*
 
