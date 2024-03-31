@@ -6,12 +6,14 @@ OUTPUT ?= $(CURDIR)/output
 OUTPUT_BUSYBOX ?= $(OUTPUT)/busybox
 OUTPUT_ETHTOOL ?= $(OUTPUT)/ethtool
 OUTPUT_KERNEL ?= $(OUTPUT)/kernel
+OUTPUT_PERF ?= $(OUTPUT)/perf
 OUTPUT_ROOTFS ?= $(OUTPUT)/rootfs
 
 SRC_BUSYBOX ?= $(CURDIR)/busybox/busybox-1.30.0
 SRC_ETHTOOL ?= $(CURDIR)/ethtool/ethtool-5.2.tar.gz
 SRC_KERNEL ?= $(CURDIR)/kernel/linux-5.0
 SRC_ROOTFS ?= $(CURDIR)/rootfs
+SRC_PERF ?= $(SRC_KERNEL)/tools/perf
 
 ifeq ($(JOBS),)
 JOBS :=$(SHELL grep -c ^processor /proc/cpuinfo	2 > /dev/null)
@@ -20,7 +22,7 @@ JOBS :=1
 endif
 endif
 
-all: dtb rootfs busybox ethtool kernel pack
+all: dtb rootfs busybox ethtool perf kernel pack
 
 dtb: 
 	$(Q)mkdir -p $(OUTPUT)
@@ -37,6 +39,10 @@ ethtool:
 	$(Q)pushd $(OUTPUT_ETHTOOL); ./configure --host=$(HOST) --prefix=$(OUTPUT_ROOTFS);popd
 	$(Q)make -C $(OUTPUT_ETHTOOL) -j$(JOBS)
 	$(Q)make -C $(OUTPUT_ETHTOOL) -j$(JOBS) install
+
+perf:
+	$(Q)mkdir -p $(OUTPUT_PERF)
+	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_PERF) O=$(OUTPUT_PERF) -j$(JOBS) LD_FLAGS+=--static WERROR=0 V=1 NO_LIBELF=1
 
 kernel:
 	$(Q)mkdir -p $(OUTPUT_KERNEL)
@@ -69,18 +75,21 @@ rootfs:
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr/bin
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr/lib
+	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr/local/bin
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr/sbin
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/usr/share
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/var
 	$(Q)mkdir -p $(OUTPUT_ROOTFS)/var/run
 
 	$(Q)cp -rf $(SRC_ROOTFS)/* $(OUTPUT_ROOTFS)/
+	$(Q)cp -rf $(OUTPUT_PERF)/perf $(OUTPUT_ROOTFS)/usr/local/bin
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s lib lib64;popd
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s sbin/init init;popd
 
 	$(Q)cp -rf $(CURDIR)/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib $(OUTPUT_ROOTFS)
 	$(Q)find $(OUTPUT_ROOTFS) -name *.a | xargs rm -rf
 	$(Q)-$(CROSS_COMPILE)strip -s $(OUTPUT_ROOTFS)/lib/*
+	$(Q)-$(CROSS_COMPILE)strip -s $(OUTPUT_ROOTFS)/usr/local/bin/*
 
 pack:
 	$(Q)pushd $(OUTPUT_ROOTFS); find . | cpio -o -H newc > $(OUTPUT)/initrd
