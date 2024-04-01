@@ -22,7 +22,7 @@ JOBS :=1
 endif
 endif
 
-all: dtb rootfs busybox ethtool perf kernel pack
+all: dtb perf rootfs busybox ethtool kernel pack
 
 dtb: 
 	$(Q)mkdir -p $(OUTPUT)

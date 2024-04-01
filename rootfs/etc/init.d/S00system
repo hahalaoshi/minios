@@ -1,0 +1,12 @@
+#!/bin/sh
+
+echo "Start init system..."
+
+mount -a
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+
+echo mdev > /proc/sys/kernel/hotplug
+mdev -s
+
+hostname miniOS
