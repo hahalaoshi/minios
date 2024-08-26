@@ -1,6 +1,6 @@
 ARCH ?= arm64
 HOST ?= aarch64-linux-gnu
-CROSS_COMPILE ?= aarch64-linux-gnu-
+CROSS_COMPILE = aarch64-linux-gnu-
 
 OUTPUT ?= $(CURDIR)/output
 OUTPUT_BUSYBOX ?= $(OUTPUT)/busybox
@@ -15,12 +15,7 @@ SRC_KERNEL ?= $(CURDIR)/kernel/linux-5.0
 SRC_ROOTFS ?= $(CURDIR)/rootfs
 SRC_PERF ?= $(SRC_KERNEL)/tools/perf
 
-ifeq ($(JOBS),)
-JOBS :=$(SHELL grep -c ^processor /proc/cpuinfo	2 > /dev/null)
-ifeq ($(JOBS),)
-JOBS :=1
-endif
-endif
+JOBS :=$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
 all: dtb perf rootfs busybox ethtool kernel pack
 
@@ -46,9 +41,9 @@ perf:
 
 kernel:
 	$(Q)mkdir -p $(OUTPUT_KERNEL)
-	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j8 defconfig
-	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j8
-	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j8 INSTALL_MOD_PATH=$(OUTPUT_ROOTFS) INSTALL_MOD_STRIP=1 modules_install
+	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j$(JOBS) defconfig
+	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j$(JOBS)
+	$(Q)make	ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(SRC_KERNEL) O=$(OUTPUT_KERNEL) -j$(JOBS) INSTALL_MOD_PATH=$(OUTPUT_ROOTFS) INSTALL_MOD_STRIP=1 modules_install
 	$(Q)cp $(OUTPUT_KERNEL)/arch/$(ARCH)/boot/Image $(OUTPUT)
 
 rootfs:
@@ -86,7 +81,7 @@ rootfs:
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s lib lib64;popd
 	$(Q)pushd $(OUTPUT_ROOTFS); ln -s sbin/init init;popd
 
-	$(Q)cp -rf $(CURDIR)/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib $(OUTPUT_ROOTFS)
+	$(Q)cp -rf $(CURDIR)/compiler/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib $(OUTPUT_ROOTFS)
 	$(Q)find $(OUTPUT_ROOTFS) -name *.a | xargs rm -rf
 	$(Q)-$(CROSS_COMPILE)strip -s $(OUTPUT_ROOTFS)/lib/*
 	$(Q)-$(CROSS_COMPILE)strip -s $(OUTPUT_ROOTFS)/usr/local/bin/*
